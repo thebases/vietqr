@@ -1,3 +1,9 @@
 dist
 .idea
 pyproject.toml
+.agents
+.claude
+CLAUDE.md
+.pyc
+.class
+__pycache__/

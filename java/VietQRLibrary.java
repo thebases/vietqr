@@ -19,6 +19,58 @@ public class VietQRLibrary {
 
     public static final String NAPAS_GUID = "A000000727";
 
+    // Bank short name -> Napas BIN (use as Fields.acq)
+    public static final java.util.Map<String, String> BANK_CODE;
+    static {
+        java.util.Map<String, String> m = new java.util.LinkedHashMap<>();
+        m.put("ABB", "970425");
+        m.put("ACB", "970416");
+        m.put("AGRI", "970405");
+        m.put("BAB", "970409");
+        m.put("BIDV", "970488");
+        m.put("BVB", "970438");
+        m.put("COOP", "970446");
+        m.put("DAB", "970406");
+        m.put("EIB", "970431");
+        m.put("GPB", "970408");
+        m.put("HDB", "970437");
+        m.put("HLB", "970442");
+        m.put("IVB", "970434");
+        m.put("KLB", "970452");
+        m.put("LVB", "970449");
+        m.put("MB", "970422");
+        m.put("MSB", "970426");
+        m.put("NAB", "970428");
+        m.put("NCB", "970419");
+        m.put("OCB", "970448");
+        m.put("PGB", "970430");
+        m.put("PVC", "970412");
+        m.put("SCB", "970429");
+        m.put("SEA", "970440");
+        m.put("SGB", "970400");
+        m.put("SHINHAN", "970424");
+        m.put("SHB", "970443");
+        m.put("STB", "970403");
+        m.put("TCB", "970407");
+        m.put("TPB", "970423");
+        m.put("UOB", "970458");
+        m.put("VAB", "970427");
+        m.put("VC", "970460");
+        m.put("VCB", "970436");
+        m.put("VCCB", "970454");
+        m.put("VIB", "970441");
+        m.put("VPB", "970432");
+        m.put("VRB", "970421");
+        m.put("VTB", "970415");
+        m.put("WRB", "970457");
+        BANK_CODE = java.util.Collections.unmodifiableMap(m);
+    }
+
+    /** Returns the BIN for a bank short name, or null if unknown. */
+    public static String getBinCode(String bank) {
+        return BANK_CODE.get(bank);
+    }
+
     public static class Currency {
         public static final String VND = "704";
         public static final String USD = "840";
@@ -152,6 +204,7 @@ public class VietQRLibrary {
                     .replaceAll("đ", "d")
                     .replaceAll("[\\u0300\\u0301\\u0303\\u0309\\u0323]", "")
                     .replaceAll("[\\u02C6\\u0306\\u031B]", "")
+                    .replaceAll("[^\\x00-\\x7F]", "") // any other non-ASCII character is dropped
                     .toUpperCase()
                     .trim();
         }
@@ -177,7 +230,7 @@ public class VietQRLibrary {
         public String toString() {
             String value = (tagValue instanceof List)
                     ? ((List<?>) tagValue).stream().map(Object::toString).collect(Collectors.joining())
-                    : (String) tagValue;
+                    : (tagValue == null ? "" : CRC.nonAccentVietnamese((String) tagValue)); // upper-case ASCII
 
             if (value.isEmpty()) {
                 return "";
@@ -206,45 +259,49 @@ public class VietQRLibrary {
             return semiVietQR + crcValue;
         }
 
-        public void builder() {
+        public String builder() {
+            data.clear();
+            boolean dynamic = fields.isDynamicQR;
             data.add(new TLV(0, "Payload Format Indicator", 2, true, "M", "01"));
-            data.add(new TLV(1, "QR Type", 2, true, "M", fields.isDynamicQR ? "12" : "11"));
+            data.add(new TLV(1, "QR Type", 2, true, "M", dynamic ? "12" : "11"));
             data.add(new TLV(38, "QR code service on NAPAS system", 99, false, "M", List.of(
-                    new TLV(0, "Global Unique Identifier - GUID", 99, false, "M", NAPAS_GUID),
-                    new TLV(1, "Acquirer Information", 99, false, "M", List.of(
-                            new TLV(0, "Merchant Account Information", 6, false, "M", fields.acquirer),
-                            new TLV(1, "Merchant ID", 19, true, "M", fields.merchantId)
+                    new TLV(0, "Global Unique Identifier - GUID", 10, true, "M", NAPAS_GUID),
+                    new TLV(1, "Payment network specific", 32, false, "M", List.of(
+                            new TLV(0, "Acquier ID/BNB ID", 6, true, "M", fields.acquirer),
+                            new TLV(1, "Merchant ID/Consumer ID", 19, false, "M", fields.merchantId)
                     )),
-                    new TLV(2, "Service Code", 10, true, "M", fields.serviceCode)
+                    new TLV(2, "Service Code", 10, false, "C", fields.serviceCode)
             )));
-            data.add(new TLV(52, "Merchant Category", 4, true, "M", fields.merchantCategory));
+            data.add(new TLV(52, "Merchant Category Code", 4, true, "O", fields.merchantCategory));
             data.add(new TLV(53, "Transaction Currency", 3, true, "M", fields.currency));
-            if (fields.isDynamicQR) {
-                data.add(new TLV(54, "Transaction Amount", 13, false, "O", fields.amount != null ? fields.amount : "0"));
-            }
+            data.add(new TLV(54, "Transaction Amount", 13, false, "C", dynamic ? fields.amount : ""));
             data.add(new TLV(58, "Country Code", 2, true, "M", fields.countryCode));
-            data.add(new TLV(59, "Merchant Name", 25, false, "M", fields.merchantName));
-            data.add(new TLV(60, "Merchant City", 15, false, "M", fields.merchantCity));
-            data.add(new TLV(62, "Additional Data Field Template", 100, false, "O", List.of(
+            data.add(new TLV(59, "Merchant Name", 25, false, "O", fields.merchantName));
+            data.add(new TLV(60, "Merchant City", 15, false, "O", fields.merchantCity));
+            data.add(new TLV(61, "Postal Code", 10, false, "O", fields.postalCode));
+            data.add(new TLV(62, "Additional Data Field Template", 99, true, "O", List.of(
                     new TLV(1, "Bill Number", 25, false, "C", fields.billNumber),
-                    new TLV(2, "Mobile Number", 15, false, "O", fields.mobileNumber),
+                    new TLV(2, "Mobile Number", 25, false, "C", fields.mobileNumber),
                     new TLV(3, "Store Label", 25, false, "O", fields.storeLabel),
                     new TLV(4, "Loyalty Number", 25, false, "O", fields.loyaltyNumber),
-                    new TLV(5, "Reference Label", 25, false, "O", fields.refLabel),
-                    new TLV(6, "Customer Label", 25, false, "O", fields.customerLabel),
+                    new TLV(5, "Reference Label", 25, false, "C", fields.refLabel),
+                    new TLV(6, "Customer Label", 25, false, "C", fields.customerLabel),
                     new TLV(7, "Terminal Label", 25, false, "O", fields.terminalLabel),
-                    new TLV(8, "Purpose of Transaction", 25, false, "O", fields.purposeTxn),
-                    new TLV(9, "Additional Customer Data Request", 25, false, "O", fields.additionalData),
-                    new TLV(10, "Language Preference and Merchant Name", 2, false, "O", List.of(
-                            new TLV(0, "Language Preference", 2, true, "O", fields.langRef),
-                            new TLV(1, "Merchant Name", 25, false, "O", fields.localMerchantName),
-                            new TLV(2, "Merchant City", 15, false, "O", fields.localMerchantCity)
-                    )),
-                    new TLV(11, "UUID", 40, false, "O", fields.uuid),
-                    new TLV(12, "IPN URL", 100, false, "O", fields.ipnUrl),
-                    new TLV(13, "APP Package Name", 99, false, "O", fields.appPackageName),
-                    new TLV(14, "Custom Data", 99, false, "O", fields.customData)
+                    new TLV(8, "Purpose of Transaction", 25, false, "C",
+                            fields.purposeTxn),
+                    new TLV(9, "Additional Consumer Data Request", 3, false, "O", fields.additionalData)
             )));
+            data.add(new TLV(64, "Merchant Information - Language Template", 2, true, "O", List.of(
+                    new TLV(0, "Language Preference", 2, true, "M", fields.langRef),
+                    new TLV(1, "Merchant Name - Alternate Language", 25, false, "M", fields.localMerchantName),
+                    new TLV(2, "Merchant City - Alternate Language", 15, false, "O", fields.localMerchantCity)
+            )));
+            // Tag 80 is optional (special use case): only emitted when uuid/customData is set
+            data.add(new TLV(80, "The Base data", 99, false, "O", List.of(
+                    new TLV(0, "uuid", 16, false, "O", fields.uuid),
+                    new TLV(1, "custom data", 83, false, "O", fields.customData)
+            )));
+            return toString();
         }
     }
 }

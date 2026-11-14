@@ -1,0 +1,135 @@
+[
+ {
+  "name": "dynamic",
+  "fields": {
+   "merchant_category": "5812",
+   "merchant_name": "TEST",
+   "merchant_city": "HCM",
+   "amount": "50000",
+   "acq": "970403",
+   "merchant_id": "123456789",
+   "service_code": "QRIBFTTA"
+  },
+  "expected": "00020101021238530010A0000007270123000697040301091234567890208QRIBFTTA5204581253037045405500005802VN5904TEST6003HCM6304B2E5"
+ },
+ {
+  "name": "static",
+  "fields": {
+   "is_dynamic_qr": false,
+   "merchant_category": "5812",
+   "merchant_name": "TEST",
+   "merchant_city": "HCM",
+   "acq": "970436",
+   "merchant_id": "0011001234567",
+   "service_code": "QRPUSH"
+  },
+  "expected": "00020101021138550010A00000072701270006970436011300110012345670206QRPUSH5204581253037045802VN5904TEST6003HCM630492F2"
+ },
+ {
+  "name": "tag62",
+  "fields": {
+   "merchant_name": "Cong Ty",
+   "merchant_city": "HA NOI",
+   "postal_code": "100000",
+   "amount": "1000",
+   "merchant_id": "1",
+   "bill_number": "INV01",
+   "mobile_number": "0900000000",
+   "store_label": "S1",
+   "loyalty_number": "L1",
+   "ref_label": "R1",
+   "customer_label": "C1",
+   "terminal_label": "T1",
+   "purpose_txn": "Chuyển tiền/ĐÀ Nẵng Ợ",
+   "additional_data": "CME"
+  },
+  "expected": "00020101021238450010A00000072701150006970403010110208QRIBFTTA5303704540410005802VN5907CONG TY6006HA NOI610610000062850105INV01021009000000000302S10402L10502R10602C10702T10821CHUYEN TIEN-DA NANG O0903CME6304EDAF"
+ },
+ {
+  "name": "tag64",
+  "fields": {
+   "merchant_name": "A",
+   "amount": "5",
+   "merchant_id": "1",
+   "lang_ref": "vi",
+   "local_merchant_name": "Cua hang",
+   "local_merchant_city": "HN"
+  },
+  "expected": "00020101021238450010A00000072701150006970403010110208QRIBFTTA5303704540155802VN5901A64240002VI0108CUA HANG0202HN630410AB"
+ },
+ {
+  "name": "tag80",
+  "fields": {
+   "merchant_name": "A",
+   "amount": "5",
+   "merchant_id": "1",
+   "uuid": "u-123",
+   "custom_data": "x=1"
+  },
+  "expected": "00020101021238450010A00000072701150006970403010110208QRIBFTTA5303704540155802VN5901A80160005U-1230103X=16304820E"
+ },
+ {
+  "name": "tag80b",
+  "fields": {
+   "merchant_name": "A",
+   "amount": "5",
+   "merchant_id": "1",
+   "custom_data": "only"
+  },
+  "expected": "00020101021238450010A00000072701150006970403010110208QRIBFTTA5303704540155802VN5901A80080104ONLY63048BE3"
+ },
+ {
+  "name": "defaults",
+  "fields": {},
+  "expected": "00020101021238400010A000000727011000069704030208QRIBFTTA5303704540105802VN630406F2"
+ },
+ {
+  "name": "card",
+  "fields": {
+   "merchant_name": "B",
+   "amount": "250000",
+   "acq": "970422",
+   "merchant_id": "9704220000000000",
+   "service_code": "QRIBFTTC",
+   "currency": "840"
+  },
+  "expected": "00020101021238600010A00000072701300006970422011697042200000000000208QRIBFTTC530384054062500005802VN5901B63040DF5"
+ },
+ {
+  "name": "crc0",
+  "fields": {
+   "merchant_name": "T",
+   "acq": "970403",
+   "merchant_id": "1",
+   "amount": "1008"
+  },
+  "expected": "00020101021238450010A00000072701150006970403010110208QRIBFTTA5303704540410085802VN5901T630400D4"
+ },
+ {
+  "name": "lower",
+  "fields": {
+   "merchant_name": "Công ty Đà Nẵng a/b",
+   "merchant_city": "Hà Nội",
+   "merchant_id": "abc123",
+   "bill_number": "inv-x",
+   "lang_ref": "vi",
+   "local_merchant_name": "Cửa hàng",
+   "uuid": "u-abc",
+   "custom_data": "k=v",
+   "service_code": "QRIBFTTA",
+   "amount": "10"
+  },
+  "expected": "00020101021238500010A000000727012000069704030106ABC1230208QRIBFTTA53037045402105802VN5919CONG TY DA NANG A-B6006HA NOI62090105INV-X64180002VI0108CUA HANG80160005U-ABC0103K=V6304E124"
+ },
+ {
+  "name": "nonascii",
+  "fields": {
+   "merchant_name": "Muñoz 😀 Café",
+   "merchant_city": "Hà Nội",
+   "merchant_id": "1",
+   "purpose_txn": "Ưu đãi — “VIP” 日本",
+   "amount": "5"
+  },
+  "expected": "00020101021238450010A00000072701150006970403010110208QRIBFTTA5303704540155802VN5910MUOZ  CAFE6006HA NOI62150811UU DAI  VIP6304A39A"
+ }
+]
